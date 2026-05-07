@@ -199,6 +199,33 @@ headers = {
 
 </details>
 
+### x-rap-param 签名
+
+部分接口（如 `/api/sns/web/v1/feed`）会校验 `x-rap-param`。`sign_headers_*` 系列**不**自动生成它，需要单独调用 `sign_x_rap_param`，再合并到 headers 里。
+
+```python
+from xhshow import Xhshow
+
+client = Xhshow()
+cookies = {"a1": "...", "web_session": "...", "webId": "..."}
+
+uri = "/api/sns/web/v1/feed"
+payload = {
+    "source_note_id": "69fa0d4e000000002003be0c",
+    "image_formats": ["jpg", "webp", "avif"],
+    "extra": {"need_body_topic": "1"},
+    "xsec_source": "pc_feed",
+    "xsec_token": "ABKN_94weMpdGt2DcCVA_u5Ih0MTm4gNrNpA0eb50R3ms=",
+}
+
+sign_headers = client.sign_headers_post(uri=uri, cookies=cookies, payload=payload)
+x_rap_param = client.sign_x_rap_param(method="POST", uri=uri, payload=payload)
+
+headers = {**sign_headers, "x-rap-param": x_rap_param}
+```
+
+实现细节、字段语义、扩展事件序列的指引见 [`docs/x-rap-param.md`](docs/x-rap-param.md)。
+
 ### 会话管理（实验性功能）
 
 `SessionManager` 用于模拟真实用户会话，维护状态化的签名参数，可能有助于提升长期稳定性。
@@ -319,6 +346,13 @@ client = Xhshow(config=custom_config)
 
 ### **sign_xsc** 系列方法
 - `cookie_dict`: 完整的 cookie 字典或 cookie 字符串
+
+### **sign_x_rap_param**
+- `method`: 请求方法（"GET" 或 "POST"）
+- `uri`: 请求 URI（POST 用纯 path，GET 可带 query string）
+- `payload`: POST body（dict 或已 stringify 的 JSON）；GET 时忽略
+- `host`: RequestHash 输入的 host 名，默认 `edith.xiaohongshu.com`
+- `timestamp`: 可选的统一时间戳（秒）
 
 ## 开发环境
 
