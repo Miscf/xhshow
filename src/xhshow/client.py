@@ -7,6 +7,7 @@ from typing import Any, Literal
 from .config import CryptoConfig
 from .core.common_sign import XsCommonSigner
 from .core.crypto import CryptoProcessor
+from .core.x_rap import RapParamSigner
 from .session import SessionManager, SignState
 from .utils.random_gen import RandomGenerator
 from .utils.url_utils import build_url, extract_uri
@@ -27,6 +28,7 @@ class Xhshow:
         self.config = config or CryptoConfig()
         self.crypto_processor = CryptoProcessor(self.config)
         self.random_generator = RandomGenerator()
+        self._rap_signer: RapParamSigner | None = None
 
     def _build_content_string(self, method: str, uri: str, payload: dict[str, Any] | None = None) -> str:
         """
@@ -377,6 +379,38 @@ class Xhshow:
             'cd7604be588000051a7fb8ae74496a76'
         """
         return self.random_generator.generate_xray_trace_id(timestamp, seq)
+
+    def sign_x_rap_param(
+        self,
+        method: Literal["GET", "POST"],
+        uri: str,
+        payload: dict[str, Any] | str | None = None,
+        *,
+        host: str = "edith.xiaohongshu.com",
+        timestamp: float | None = None,
+    ) -> str:
+        """
+        Generate the ``x-rap-param`` request header.
+
+        The signer keeps a stable page-load timestamp across calls (mirroring
+        the JSVMP, which captures it once at module-init). A new
+        ``page_load_timestamp`` is generated lazily on first use.
+
+        Args:
+            method: Request method ("GET" or "POST").
+            uri: Request URI (path, may include query string for GET).
+            payload: POST body (dict or already-stringified JSON). Ignored for GET.
+            host: Host name used in the RequestHash hash input. Defaults to
+                ``edith.xiaohongshu.com``; pass ``creator.xiaohongshu.com`` for
+                creator-platform endpoints.
+            timestamp: Override the inner timestamp (seconds since epoch).
+
+        Returns:
+            str: Base64-encoded x-rap-param header value.
+        """
+        if self._rap_signer is None:
+            self._rap_signer = RapParamSigner()
+        return self._rap_signer.sign(method, uri, payload, host=host, timestamp=timestamp)
 
     def get_x_t(self, timestamp: float | None = None) -> int:
         """
