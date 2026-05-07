@@ -152,6 +152,9 @@ class Xhshow:
 
         signature_data = self.crypto_processor.config.SIGNATURE_DATA_TEMPLATE.copy()
         signature_data["x3"] = self.crypto_processor.config.X3_PREFIX + x3_signature
+        # JS source: x4 = body ? typeof body : ""
+        # POST with any non-None payload → typeof === "object"; GET (or empty body) → ""
+        signature_data["x4"] = "object" if method.upper() == "POST" and payload is not None else ""
 
         return self.crypto_processor.config.XYS_PREFIX + self.crypto_processor.b64encoder.encode(
             json.dumps(signature_data, separators=(",", ":"), ensure_ascii=False)
@@ -160,19 +163,22 @@ class Xhshow:
     def sign_xs_common(
         self,
         cookie_dict: dict[str, Any] | str,
+        session: SessionManager | None = None,
     ) -> str:
         """
         Generate x-s-common signature
 
         Args:
             cookie_dict: Complete cookie dictionary or cookie string
+            session: Optional session manager. When provided, x12 page-load
+                and dsl timestamps come from the session for stable cross-call values.
 
         Returns:
             Encoded x-s-common signature string
         """
         parsed_cookies = self._parse_cookies(cookie_dict)
         signer = XsCommonSigner(self.config)
-        return signer.sign(parsed_cookies)
+        return signer.sign(parsed_cookies, session=session)
 
     @validate_get_signature_params
     def sign_xs_get(
@@ -242,12 +248,14 @@ class Xhshow:
     def sign_xsc(
         self,
         cookie_dict: dict[str, Any] | str,
+        session: SessionManager | None = None,
     ) -> str:
         """
         Convenience wrapper to generate the `x-s-common` signature.
 
         Args:
             cookie_dict: Enter your complete cookie dictionary
+            session: Optional session manager for stateful x12 timestamps.
 
         Returns:
             Encoded signature string suitable for the `x-s-common` header.
@@ -256,7 +264,7 @@ class Xhshow:
             TypeError: Parameter type error
             ValueError: Parameter value error
         """
-        return self.sign_xs_common(cookie_dict)
+        return self.sign_xs_common(cookie_dict, session=session)
 
     def decode_x3(self, x3_signature: str) -> bytearray:
         """
@@ -478,7 +486,7 @@ class Xhshow:
             raise ValueError("Missing 'a1' in cookies")
 
         x_s = self.sign_xs(method_upper, uri, a1_value, xsec_appid, request_data, timestamp, session)
-        x_s_common = self.sign_xs_common(cookie_dict)
+        x_s_common = self.sign_xs_common(cookie_dict, session=session)
         x_t = self.get_x_t(timestamp)
         x_b3_traceid = self.get_b3_trace_id()
         x_xray_traceid = self.get_xray_trace_id(timestamp=int(timestamp * 1000))

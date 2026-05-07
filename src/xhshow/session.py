@@ -24,7 +24,8 @@ class SessionManager:
 
     def __init__(self, config: CryptoConfig | None = None):
         self._config = config or CryptoConfig()
-        self.page_load_timestamp: int = int(time.time() * 1000)
+        now_ms = int(time.time() * 1000)
+        self.page_load_timestamp: int = now_ms
         self.sequence_value: int = random.randint(
             self._config.SESSION_SEQUENCE_INIT_MIN,
             self._config.SESSION_SEQUENCE_INIT_MAX,
@@ -32,6 +33,13 @@ class SessionManager:
         self.window_props_length: int = random.randint(
             self._config.SESSION_WINDOW_PROPS_INIT_MIN,
             self._config.SESSION_WINDOW_PROPS_INIT_MAX,
+        )
+        # dsl_timestamp mimics the SDK distribution timestamp embedded in
+        # https://as.xiaohongshu.com/api/sec/v1/ds (different per session, stable
+        # within a session). Used as the second segment of x-s-common.x12.
+        self.dsl_timestamp: int = now_ms - random.randint(
+            self._config.SESSION_DSL_OFFSET_MS_MIN,
+            self._config.SESSION_DSL_OFFSET_MS_MAX,
         )
 
     def update_state(self):

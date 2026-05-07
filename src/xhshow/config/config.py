@@ -13,8 +13,8 @@ class CryptoConfig:
     GID_URL = "https://as.xiaohongshu.com/api/sec/v1/shield/webprofile"
     DATA_PALTFORM = "Windows"
     DATA_SVN = "2"
-    DATA_SDK_VERSION = "4.2.6"
-    DATA_webBuild = "5.0.3"
+    DATA_SDK_VERSION = "4.3.5"
+    DATA_webBuild = "6.8.2"
 
     # Bitwise operation constants
     MAX_32BIT: int = 0xFFFFFFFF
@@ -59,6 +59,17 @@ class CryptoConfig:
     SESSION_WINDOW_PROPS_STEP_MIN: int = 1
     SESSION_WINDOW_PROPS_STEP_MAX: int = 10
 
+    # x-s-common.x12 dsl_timestamp range (milliseconds before "now")
+    # mimics the SDK distribution timestamp embedded in dynamic SDK files.
+    # Real samples observed: ~1-3 days before request time.
+    SESSION_DSL_OFFSET_MS_MIN: int = 86_400_000
+    SESSION_DSL_OFFSET_MS_MAX: int = 7 * 86_400_000
+
+    # x-s-common.x12 page_load_timestamp offset for non-session calls (ms before "now")
+    # 1 minute to 30 minutes — realistic browsing window
+    XSC_PAGE_LOAD_OFFSET_MS_MIN: int = 60_000
+    XSC_PAGE_LOAD_OFFSET_MS_MAX: int = 1_800_000
+
     # Checksum constants (16 bytes total)
     CHECKSUM_VERSION: int = 1
     CHECKSUM_XOR_KEY: int = 115
@@ -85,7 +96,7 @@ class CryptoConfig:
     # Signature data template
     SIGNATURE_DATA_TEMPLATE: dict[str, str] = field(
         default_factory=lambda: {
-            "x0": "4.2.6",
+            "x0": "4.3.5",
             "x1": "xhs-pc-web",
             "x2": "Windows",
             "x3": "",
@@ -113,10 +124,10 @@ class CryptoConfig:
             "s0": 5,
             "s1": "",
             "x0": "1",
-            "x1": "4.2.6",
+            "x1": "4.3.5",
             "x2": "Windows",
             "x3": "xhs-pc-web",
-            "x4": "4.86.0",
+            "x4": "6.8.2",
             "x5": "",
             "x6": "",
             "x7": "",
@@ -124,6 +135,7 @@ class CryptoConfig:
             "x9": -596800761,
             "x10": 0,
             "x11": "normal",
+            "x12": "",
         }
     )
 

@@ -234,6 +234,7 @@ def validate_xs_common_params(func: F) -> F:  # type: ignore[misc]  # noqa: UP04
     def wrapper(
         self,
         cookie_dict: dict[str, Any] | None = None,
+        session: Any = None,
     ) -> str:
         validator = RequestSignatureValidator()
 
@@ -243,6 +244,7 @@ def validate_xs_common_params(func: F) -> F:  # type: ignore[misc]  # noqa: UP04
         return func(
             self,
             validated_cookie_dict,
+            session,
         )
 
     return wrapper  # type: ignore

@@ -166,3 +166,9 @@ package.json
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+
+
+# claude
+claude_own
+misc
+CLAUDE.md
